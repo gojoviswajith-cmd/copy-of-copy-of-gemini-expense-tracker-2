@@ -3,12 +3,12 @@ import type { ProfileSettings } from '../types';
 
 interface ProfileViewProps {
   settings: ProfileSettings;
-  setSettings: (settings: ProfileSettings) => void;
+  setSettings: (settings: ProfileSettings) => Promise<void>;
 }
 
 const ProfileView: React.FC<ProfileViewProps> = ({ settings, setSettings }) => {
-  const handleToggle = () => {
-    setSettings({ ...settings, enableBudgetAlerts: !settings.enableBudgetAlerts });
+  const handleToggle = async () => {
+    await setSettings({ ...settings, enableBudgetAlerts: !settings.enableBudgetAlerts });
   };
 
   return (

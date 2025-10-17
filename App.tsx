@@ -7,23 +7,11 @@ import ExpensesView from './components/ExpensesView';
 import BudgetsView from './components/BudgetsView';
 import ProfileView from './components/ProfileView';
 import LoginView from './components/LoginView';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { expenseService } from './services/expenseService';
+import { budgetService } from './services/budgetService';
+import { profileService } from './services/profileService';
 
-const getInitialExpenses = (): Expense[] => {
-  const today = new Date();
-  const expenses: Expense[] = [];
-  for (let i = 0; i < 20; i++) {
-    const date = new Date(today.getFullYear(), today.getMonth(), Math.floor(Math.random() * 28) + 1);
-    const category = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
-    expenses.push({
-      id: crypto.randomUUID(),
-      categoryId: category.id,
-      amount: parseFloat((Math.random() * 100 + 5).toFixed(2)),
-      date: date.toISOString().split('T')[0],
-      notes: `Sample expense entry #${i + 1}`
-    });
-  }
-  return expenses.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-};
 
 const getInitialTheme = (): 'light' | 'dark' => {
   if (typeof window !== 'undefined' && window.localStorage) {
@@ -41,24 +29,48 @@ const getInitialTheme = (): 'light' | 'dark' => {
 };
 
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
+  const { user, loading, signOut } = useAuth();
   const [view, setView] = useState<View>('dashboard');
-  const [expenses, setExpenses] = useState<Expense[]>(getInitialExpenses());
+  const [expenses, setExpenses] = useState<Expense[]>([]);
   const [budget, setBudget] = useState<Budget>({ amount: 1000, period: 'monthly' });
   const [profileSettings, setProfileSettings] = useState<ProfileSettings>({ enableBudgetAlerts: true });
   const [theme, setTheme] = useState<'light' | 'dark'>(getInitialTheme);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [dataLoading, setDataLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      loadUserData();
+    }
+  }, [user]);
+
+  const loadUserData = async () => {
+    if (!user) return;
+
+    setDataLoading(true);
+    try {
+      const [expensesData, budgetData, profileData] = await Promise.all([
+        expenseService.getAll(user.id),
+        budgetService.get(user.id),
+        profileService.get(user.id),
+      ]);
+
+      setExpenses(expensesData);
+      if (budgetData) setBudget(budgetData);
+      if (profileData) setProfileSettings(profileData);
+    } catch (error: any) {
+      console.error('Error loading user data:', error);
+    } finally {
+      setDataLoading(false);
+    }
+  };
 
   const toggleTheme = () => {
     setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
   };
-  
-  const handleLogin = () => {
-    setIsAuthenticated(true);
-  };
-  
-  const handleLogout = () => {
-    setIsAuthenticated(false);
+
+  const handleLogout = async () => {
+    await signOut();
   };
 
   useEffect(() => {
@@ -70,18 +82,37 @@ const App: React.FC = () => {
     return new Map(CATEGORIES.map(cat => [cat.id, cat]));
   }, []);
 
-  const addExpense = (expense: Omit<Expense, 'id'>) => {
-    const newExpense = { ...expense, id: crypto.randomUUID() };
-    const updatedExpenses = [...expenses, newExpense].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    setExpenses(updatedExpenses);
+  const addExpense = async (expense: Omit<Expense, 'id'>) => {
+    if (!user) return;
+    try {
+      const newExpense = await expenseService.create(user.id, expense);
+      setExpenses(prev => [newExpense, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    } catch (error: any) {
+      console.error('Error adding expense:', error);
+      alert('Failed to add expense. Please try again.');
+    }
   };
 
-  const updateExpense = (updatedExpense: Expense) => {
-    setExpenses(expenses.map(exp => exp.id === updatedExpense.id ? updatedExpense : exp).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+  const updateExpense = async (updatedExpense: Expense) => {
+    if (!user) return;
+    try {
+      await expenseService.update(user.id, updatedExpense);
+      setExpenses(prev => prev.map(exp => exp.id === updatedExpense.id ? updatedExpense : exp).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    } catch (error: any) {
+      console.error('Error updating expense:', error);
+      alert('Failed to update expense. Please try again.');
+    }
   };
 
-  const deleteExpense = (id: string) => {
-    setExpenses(expenses.filter(exp => exp.id !== id));
+  const deleteExpense = async (id: string) => {
+    if (!user) return;
+    try {
+      await expenseService.delete(user.id, id);
+      setExpenses(prev => prev.filter(exp => exp.id !== id));
+    } catch (error: any) {
+      console.error('Error deleting expense:', error);
+      alert('Failed to delete expense. Please try again.');
+    }
   };
   
   const renderView = () => {
@@ -91,16 +122,45 @@ const App: React.FC = () => {
       case 'expenses':
         return <ExpensesView expenses={expenses} categoryMap={categoryMap} onAddExpense={addExpense} onUpdateExpense={updateExpense} onDeleteExpense={deleteExpense} />;
       case 'budgets':
-        return <BudgetsView budget={budget} setBudget={setBudget} expenses={expenses} />;
+        return <BudgetsView budget={budget} setBudget={async (newBudget) => {
+          if (!user) return;
+          try {
+            await budgetService.upsert(user.id, newBudget);
+            setBudget(newBudget);
+          } catch (error: any) {
+            console.error('Error updating budget:', error);
+            alert('Failed to update budget. Please try again.');
+          }
+        }} expenses={expenses} />;
       case 'profile':
-        return <ProfileView settings={profileSettings} setSettings={setProfileSettings} />;
+        return <ProfileView settings={profileSettings} setSettings={async (newSettings) => {
+          if (!user) return;
+          try {
+            await profileService.update(user.id, newSettings);
+            setProfileSettings(newSettings);
+          } catch (error: any) {
+            console.error('Error updating profile:', error);
+            alert('Failed to update profile. Please try again.');
+          }
+        }} />;
       default:
         return <DashboardView expenses={expenses} budget={budget} categoryMap={categoryMap} />;
     }
   };
   
-  if (!isAuthenticated) {
-    return <LoginView onLogin={handleLogin} />;
+  if (loading || (user && dataLoading)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--background-muted)]">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-emerald-500 border-t-transparent"></div>
+          <p className="mt-4 text-[var(--text-secondary)]">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginView />;
   }
 
   return (
@@ -110,6 +170,14 @@ const App: React.FC = () => {
         {renderView()}
       </main>
     </div>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 };
 

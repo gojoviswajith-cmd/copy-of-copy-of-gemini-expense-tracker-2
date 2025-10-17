@@ -8,9 +8,9 @@ import { SearchIcon } from './icons';
 interface ExpensesViewProps {
   expenses: Expense[];
   categoryMap: Map<string, Category>;
-  onAddExpense: (expense: Omit<Expense, 'id'>) => void;
-  onUpdateExpense: (expense: Expense) => void;
-  onDeleteExpense: (id: string) => void;
+  onAddExpense: (expense: Omit<Expense, 'id'>) => Promise<void>;
+  onUpdateExpense: (expense: Expense) => Promise<void>;
+  onDeleteExpense: (id: string) => Promise<void>;
 }
 
 const ITEMS_PER_PAGE = 8;
@@ -38,11 +38,11 @@ const ExpensesView: React.FC<ExpensesViewProps> = ({ expenses, categoryMap, onAd
     setEditingExpense(null);
   };
 
-  const handleSaveExpense = (expenseData: Omit<Expense, 'id'> | Expense) => {
+  const handleSaveExpense = async (expenseData: Omit<Expense, 'id'> | Expense) => {
     if ('id' in expenseData) {
-      onUpdateExpense(expenseData);
+      await onUpdateExpense(expenseData);
     } else {
-      onAddExpense(expenseData);
+      await onAddExpense(expenseData);
     }
     handleCloseModal();
   };

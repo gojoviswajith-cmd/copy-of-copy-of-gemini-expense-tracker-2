@@ -4,7 +4,7 @@ import { formatCurrency } from '../utils';
 
 interface BudgetsViewProps {
   budget: Budget;
-  setBudget: (budget: Budget) => void;
+  setBudget: (budget: Budget) => Promise<void>;
   expenses: Expense[];
 }
 
@@ -35,10 +35,10 @@ const BudgetsView: React.FC<BudgetsViewProps> = ({ budget, setBudget, expenses }
     return { totalSpent, progress, progressBarColor };
   }, [expenses, budget]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const amount = parseFloat(newAmount);
     if (!isNaN(amount) && amount >= 0) {
-      setBudget({ ...budget, amount });
+      await setBudget({ ...budget, amount });
     }
   };
 
