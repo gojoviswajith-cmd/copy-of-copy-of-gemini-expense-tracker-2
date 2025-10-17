@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-," />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gemini Expense Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/recharts/umd/Recharts.min.js"></script>
+  <style>
+    :root {
+      --background-color: #f8fafc; /* slate-50 */
+      --background-muted: #f1f5f9; /* slate-100 */
+      --card-background: #ffffff; /* white */
+      --sidebar-background: #1e293b; /* slate-800 */
+      --sidebar-text: #f1f5f9; /* slate-100 */
+      --sidebar-text-muted: #94a3b8; /* slate-400 */
+      --sidebar-hover-background: #334155; /* slate-700 */
+      --sidebar-border: #334155; /* slate-700 */
+      
+      --text-primary: #1e293b; /* slate-800 */
+      --text-secondary: #64748b; /* slate-500 */
+      --text-tertiary: #475569; /* slate-600 */
+      
+      --border-color: #e2e8f0; /* slate-200 */
+      --border-color-strong: #cbd5e1; /* slate-300 */
+
+      --brand-primary: #10b981; /* emerald-500 */
+      --brand-primary-hover: #059669; /* emerald-600 */
+      --brand-text-on-primary: #ffffff; /* white */
+    }
+
+    [data-theme='dark'] {
+      --background-color: #0f172a; /* slate-900 */
+      --background-muted: #1e293b; /* slate-800 */
+      --card-background: #1e293b; /* slate-800 */
+      --sidebar-background: #0f172a; /* slate-900 */
+      --sidebar-text: #e2e8f0; /* slate-200 */
+      --sidebar-text-muted: #64748b; /* slate-500 */
+      --sidebar-hover-background: #1e293b; /* slate-800 */
+      --sidebar-border: #1e293b; /* slate-800 */
+
+      --text-primary: #f1f5f9; /* slate-100 */
+      --text-secondary: #94a3b8; /* slate-400 */
+      --text-tertiary: #cbd5e1; /* slate-300 */
+
+      --border-color: #334155; /* slate-700 */
+      --border-color-strong: #475569; /* slate-600 */
+      
+      --brand-primary: #34d399; /* emerald-400 */
+      --brand-primary-hover: #10b981; /* emerald-500 */
+      --brand-text-on-primary: #0f172a; /* slate-900 */
+    }
+  </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "recharts": "https://aistudiocdn.com/recharts@^3.3.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-slate-50">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
